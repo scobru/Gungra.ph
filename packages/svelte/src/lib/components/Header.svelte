@@ -24,15 +24,7 @@
 
   export const menuLinks: HeaderMenuLink[] = [
     {
-      label: "Home",
-      href: "/",
-    },
-    {
-      label: "Auth",
-      href: "/auth",
-    },
-    {
-      label: "Gungra.ph",
+      label: "About",
       href: "/gungraph",
     },
   ];
@@ -87,7 +79,7 @@
     </div>
     <a href="/" class="ml-4 mr-6 hidden shrink-0 items-center gap-2 lg:flex">
       <div class="flex flex-col">
-        <span class="text-3xl font-bold leading-tight">Gungra.ph</span>
+        <span class="font-serif text-3xl font-bold leading-tight">Gungra.ph</span>
         <!--  <span class="text-xs">Decentralized Dev Stack</span> -->
       </div>
     </a>

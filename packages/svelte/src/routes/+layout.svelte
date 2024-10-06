@@ -4,6 +4,10 @@
   import ScaffoldEthApp from "$lib/components/ScaffoldEthApp.svelte";
   import { wagmiConfig } from "$lib/wagmi";
   import { Toaster } from "@leodog896/svelte-french-toast";
+  import { gun } from "$lib/stores";
+  import { get } from "svelte/store";
+  import Gun from "gun";
+  import "gun-eth";
 
   const { data }: { data: { vercelUrl?: string } } = $props();
 
@@ -15,6 +19,13 @@
     thumbnail: `${baseUrl}/thumbnail.jpg`,
     favicon: "/favicon.png",
   });
+
+  gun.set(
+    new Gun({
+      peers: ["http://localhost:3000/gun"],
+      localStorage: false,
+    }),
+  );
 </script>
 
 <svelte:head>

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import "gun/sea";
   import { onMount } from "svelte";
   import { wagmiConfig } from "$lib/wagmi";
   import { getAccount } from "@wagmi/core";
@@ -8,6 +7,7 @@
   import { notification } from "$lib/utils/scaffold-eth/notification";
   import type { IGunInstance } from "gun/types";
   import type { IGunUserInstance } from "gun/types";
+  import Gun from "gun";
   import "gun-eth";
 
   let user: IGunUserInstance = {
@@ -26,14 +26,34 @@
 
   const MESSAGE_TO_SIGN = "Accesso a GunDB con Ethereum";
 
+  $: isOpen = $currentUser === null;
+
+  let gunInstance: IGunInstance<any> | null = get(gun);
+
+  Gun.on("opt", function (ctx) {
+    if (ctx.once) {
+      return;
+    }
+    ctx.on("out", function (msg) {
+      var to = this.to;
+      // Adds headers for put
+      msg.headers = {
+        token: "test",
+      };
+      to.next(msg); // pass to next middleware
+    });
+  });
   onMount(() => {
-    const gunInstance = get(gun) as unknown as IGunInstance<any>;
+    gunInstance = get(gun);
+
     if (gunInstance) {
       user = gunInstance?.user();
     } else {
       console.error("Istanza di Gun non inizializzata correttamente");
     }
     account = getAccount(wagmiConfig);
+
+    gunInstance?.setToken("test");
 
     user.recall({ sessionStorage: true }, async (ack: { err: any }) => {
       if (ack.err) {
@@ -54,7 +74,7 @@
   async function loadUserData() {
     console.log("Loading user data...");
     currentUser.subscribe(value => currentUser.set(value));
-    const gunInstance = get(gun) || {}; // Aggiunta di un fallback per evitare null
+    const gunInstance = get(gun); // Aggiunta di un fallback per evitare null
 
     if (currentUser) {
       userPair = await gunInstance?.getAndDecryptPair(account.address, signature);
@@ -66,8 +86,13 @@
     console.log("Registrazione in corso...");
     errorMessage = "";
     const gunInstance = get(gun) || {}; // Aggiunta di un fallback per evitare null
+    console.log("gunInstance", gunInstance);
+
     account = getAccount(wagmiConfig);
+    console.log("account", account);
+
     user = gunInstance.user();
+    console.log("user", user);
 
     try {
       if (!account.address) {
@@ -80,9 +105,10 @@
         errorMessage = "Errore durante la firma del messaggio";
         return;
       }
+      console.log("signature", signature);
 
       await gunInstance.createAndStoreEncryptedPair(account.address, signature);
-
+      console.log("Pair creata e memorizzata");
       user.create(account.address, signature, async (ack: { err: string }) => {
         if (ack.err) {
           errorMessage = "Errore durante la registrazione: " + ack.err;
@@ -150,44 +176,45 @@
     userPair = null;
     errorMessage = "";
   }
+
+  function chiudiModale() {
+    isOpen = false;
+  }
 </script>
 
-<main class="container mx-auto w-full p-4">
-  <h1 class="text-base-content mb-8 text-center text-6xl font-bold">Auth</h1>
-  <h1 class="text-base-content mb-8 text-center text-6xl font-bold">🔐</h1>
+<div class="modal" class:modal-open={isOpen}>
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">Autenticazione</h3>
+    {#if errorMessage}
+      <div class="alert alert-error mt-4">{errorMessage}</div>
+    {/if}
+    {#if $currentUser === null}
+      <div class="mt-4 flex justify-center space-x-4">
+        <button class="btn btn-primary" on:click={registra}><i class="fas fa-user-plus"></i> Sign In</button>
+        <button class="btn btn-secondary" on:click={accedi}><i class="fas fa-sign-in-alt"></i> Login</button>
+      </div>
+    {:else}
+      <div class="bg-base-100 mb-4 break-all rounded px-8 pb-8 pt-6 text-center shadow-md">
+        <h2 class="mb-4 text-2xl font-semibold">Benvenuto, {$currentUser}!</h2>
 
-  {#if errorMessage}
-    <div class="relative mb-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700" role="alert">
-      <span class="block sm:inline">{errorMessage}</span>
+        {#if userPair && Object.keys(userPair).length > 0}
+          <div class="my-5 items-center">
+            <ul class="mx-auto w-2/4 text-left">
+              {#each Object.entries(userPair) as [key, value]}
+                <li class="mb-2">
+                  <strong>{key}:</strong> <span class="text-base-content">{JSON.stringify(value, null, 2)}</span>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+
+        <button class="btn btn-warning" on:click={esci}><i class="fas fa-sign-out-alt"></i> Esci</button>
+        <button class="btn btn-warning" on:click={accedi}><i class="fas fa-eye"></i> View Pair</button>
+      </div>
+    {/if}
+    <div class="modal-action">
+      <button class="btn" on:click={chiudiModale}>Chiudi</button>
     </div>
-  {/if}
-
-  {#if $currentUser === null}
-    <div class="flex justify-center space-x-4">
-      <button class="btn btn-primary" on:click={registra}><i class="fas fa-user-plus"></i> Sign In</button>
-      <button class="btn btn-secondary" on:click={accedi}><i class="fas fa-sign-in-alt"></i> Login</button>
-    </div>
-  {:else}
-    <div class="bg-base-100 mb-4 break-all rounded px-8 pb-8 pt-6 text-center shadow-md">
-      <h2 class="mb-4 text-2xl font-semibold">Benvenuto, {$currentUser}!</h2>
-
-      {#if userPair && Object.keys(userPair).length > 0}
-        <div class="my-5 items-center">
-          <ul class="mx-auto w-2/4 text-left">
-            {#each Object.entries(userPair) as [key, value]}
-              <li class="mb-2">
-                <strong>{key}:</strong> <span class="text-base-content">{JSON.stringify(value, null, 2)}</span>
-              </li>
-            {/each}
-          </ul>
-        </div>
-      {/if}
-
-      <button class="btn btn-warning" on:click={esci}><i class="fas fa-sign-out-alt"></i> Esci</button>
-      <button class="btn btn-warning" on:click={accedi}><i class="fas fa-eye"></i> View Pair</button>
-    </div>
-  {/if}
-</main>
-
-<style>
-</style>
+  </div>
+</div>

@@ -38,28 +38,35 @@
     <ul class="menu menu-horizontal w-full">
       <div class="flex w-full items-center justify-center gap-2 text-sm">
         <div class="text-center">
-          <a href="https://github.com/scaffold-eth/se-2" target="_blank" rel="noreferrer" class="link"> Fork me </a>
+          <a href="https://github.com/scobru/Gungra.ph" target="_blank" rel="noreferrer" class="link"> Fork me </a>
         </div>
         <span>·</span>
         <div class="flex items-center justify-center gap-2">
           <p class="m-0 text-center">
-            Built with <Icon src={Heart} class="inline-block h-4 w-4" /> at
+            Built with <Icon src={Heart} class="inline-block h-4 w-4" /> by
           </p>
           <a
             class="flex items-center justify-center gap-1"
-            href="https://buidlguidl.com/"
+            href="https://github.com/scobru"
             target="_blank"
             rel="noreferrer"
           >
             <BuidlGuidlLogo class="h-5 w-3 pb-1" />
-            <span class="link">BuidlGuidl</span>
+            <span class="link">Scobru</span>
+          </a>
+          at
+          <a
+            class="flex items-center justify-center gap-1"
+            href="https://github.com/plancia"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="link">Plancia</span>
           </a>
         </div>
         <span>·</span>
         <div class="text-center">
-          <a href="https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA" target="_blank" rel="noreferrer" class="link">
-            Support
-          </a>
+          <a href="https://t.me/plancia_org" target="_blank" rel="noreferrer" class="link"> Support </a>
         </div>
       </div>
     </ul>
