@@ -3,13 +3,13 @@
   import Gun from "gun";
   import "gun/sea";
   import "gun/lib/promise";
-  import "gun/lib/unset"; // Importa la libreria unset
+  import "gun/lib/unset";
   import DOMPurify from "dompurify";
   import { currentUser, gun } from "$lib/stores";
   import { goto } from "$app/navigation";
   import { get } from "svelte/store";
 
-  let gunInstance = get(gun) || {};
+  let gunInstance;
   let user;
   const SEA = Gun.SEA;
   let hash = "";
@@ -23,69 +23,116 @@
   let verification = "";
   let lastUpdated = "";
   let errorMessage = "";
+  let showAuthLink = false;
 
   let posts = [];
   let userPair;
 
   onMount(async () => {
-    gunInstance = get(gun);
+    gunInstance = get(gun) || new Gun();
+
+    if (!gunInstance) {
+      console.error("Gun instance not initialized");
+      errorMessage = "Errore di inizializzazione. Riprova più tardi.";
+      isLoading = false;
+      return;
+    }
+
     user = gunInstance.user();
     hash = window.location.hash.slice(1);
+
+    console.log("hash", hash);
 
     userPair = JSON.parse(sessionStorage.getItem("pair"));
     console.log("UserPair caricato:", userPair);
 
-    if (!userPair || !get(currentUser)) {
-      console.log("Utente non autenticato, reindirizzamento a /auth");
-      goto("/auth");
-      return;
-    }
-
-    console.log("Utente autenticato, caricamento post...");
-    await loadUserPosts();
-
     if (hash) {
+      // Se c'è un hash, prova a caricare il post (pubblico o privato)
       await loadPost(hash);
+      isLoading = false;
+    } else if (!userPair || !get(currentUser)) {
+      // Se non c'è un hash e l'utente non è autenticato, mostra un messaggio o reindirizza
+      console.log("Utente non autenticato");
+      errorMessage = "Please click on VIEW PAIR in the auth page";
+      showAuthLink = true;
+      isLoading = false;
     } else {
+      // Se l'utente è autenticato ma non c'è un hash, carica i post dell'utente
+      console.log("Utente autenticato, caricamento post...");
+      await loadUserPosts();
       isEditing = false;
+      isLoading = false;
     }
-    isLoading = false;
   });
 
   async function loadPost(postHash) {
-    gunInstance = get(gun);
-    user = gunInstance.user();
-    const publicPost = await gunInstance.get("gungra.ph").get(postHash).once();
-    if (publicPost) {
-      const parsedPost = JSON.parse(publicPost);
-      title = DOMPurify.sanitize(parsedPost.title);
-      author = DOMPurify.sanitize(parsedPost.author);
-      content = DOMPurify.sanitize(parsedPost.content);
-      verification = DOMPurify.sanitize(parsedPost.verification);
-      lastUpdated = new Date(parsedPost.lastUpdated).toLocaleString();
-      isPublic = true;
-    } else {
-      const privatePost = await user.get("gungra.ph").get(postHash).once();
-      if (privatePost) {
-        try {
-          const decryptedData = await SEA.decrypt(privatePost, userPair);
-          const parsedPost = JSON.parse(decryptedData);
-          title = DOMPurify.sanitize(parsedPost.title);
-          author = DOMPurify.sanitize(parsedPost.author);
-          content = DOMPurify.sanitize(parsedPost.content);
-          lastUpdated = new Date(parsedPost.lastUpdated).toLocaleString();
-          isPublic = false;
-        } catch (error) {
-          console.error("Errore durante la decrittazione:", error);
-          errorMessage = "Impossibile decrittare il post privato.";
+    if (!gunInstance) {
+      console.error("Gun instance not initialized");
+      errorMessage = "Errore di caricamento. Riprova più tardi.";
+      return;
+    }
+
+    try {
+      const publicPost = await new Promise((resolve, reject) => {
+        gunInstance
+          .get("gungra.ph")
+          .get(postHash)
+          .on((data, key) => {
+            if (data) {
+              resolve(data);
+            } else {
+              reject(new Error("Post non trovato"));
+            }
+          });
+      });
+
+      if (publicPost) {
+        // Carica il post pubblico
+        const parsedPost = JSON.parse(publicPost);
+        title = DOMPurify.sanitize(parsedPost.title);
+        author = DOMPurify.sanitize(parsedPost.author);
+        content = DOMPurify.sanitize(parsedPost.content);
+        verification = DOMPurify.sanitize(parsedPost.verification);
+        lastUpdated = new Date(parsedPost.lastUpdated).toLocaleString();
+        isPublic = true;
+      } else if (userPair && user) {
+        // Se non è un post pubblico e l'utente è autenticato, prova a caricare il post privato
+        const privatePost = await new Promise((resolve, reject) => {
+          user
+            .get("gungra.ph")
+            .get(postHash)
+            .on((data, key) => {
+              if (data) {
+                resolve(data);
+              } else {
+                reject(new Error("Post privato non trovato"));
+              }
+            });
+        });
+
+        if (privatePost) {
+          try {
+            const decryptedData = await SEA.decrypt(privatePost, userPair);
+            const parsedPost = JSON.parse(decryptedData);
+            title = DOMPurify.sanitize(parsedPost.title);
+            author = DOMPurify.sanitize(parsedPost.author);
+            content = DOMPurify.sanitize(parsedPost.content);
+            lastUpdated = new Date(parsedPost.lastUpdated).toLocaleString();
+            isPublic = false;
+          } catch (error) {
+            console.error("Errore durante la decrittazione:", error);
+            errorMessage = "Impossibile decrittare il post privato.";
+          }
         }
       } else {
-        console.log("Post non trovato");
-        errorMessage = "Post non trovato.";
+        console.log("Post non trovato o non accessibile");
+        errorMessage = "Post non trovato o non accessibile.";
       }
+    } catch (error) {
+      console.error("Errore durante il caricamento del post:", error);
+      errorMessage = "Errore durante il caricamento del post.";
     }
   }
-
   async function loadUserPosts() {
     gunInstance = get(gun);
     user = gunInstance.user();
@@ -256,6 +303,10 @@
     errorMessage = "";
     loadUserPosts();
   }
+
+  function goToAuth() {
+    goto("/auth");
+  }
 </script>
 
 <main class="container mx-auto p-4">
@@ -275,6 +326,9 @@
         />
       </svg>
       <span>{errorMessage}</span>
+      {#if showAuthLink}
+        <button on:click={goToAuth} class="btn btn-sm btn-outline ml-2">View Pair</button>
+      {/if}
     </div>
   {/if}
 
