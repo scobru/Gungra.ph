@@ -31,31 +31,9 @@
       label: "Auth",
       href: "/auth",
     },
-
-    {
-      label: "SHINE",
-      href: "/shine",
-    },
     {
       label: "Gungra.ph",
       href: "/gungraph",
-    },
-    {
-      label: "Inspect",
-      href: "/inspect",
-    },
-    {
-      label: "Block Explorer",
-      href: "/blockexplorer",
-    },
-    {
-      label: "Debug Contracts",
-      href: "/debug",
-      icon: BugAnt,
-    },
-    {
-      label: "Docs",
-      href: "/docs",
     },
   ];
 
