@@ -1,200 +1,61 @@
-# 🏗️ ScafoldETH2-Gun 🔫 - SE2-Gun
+# 📝 Gungra.ph
+
+Gungra.ph is a decentralized social blogging platform built with GUN.js and Ethereum.
+
+This project is a build with [SE-2Gun](https://github.com/scobru/SE-2Gun) with some modifications to fit the needs of Gungra.ph.
 
 ## Table of Contents
 
-- [SE2-Gun-Extension](#se2-gun-extension)
-- [GUN-ETH Plugin](#gun-eth-plugin)
-  - [Key Features](#key-features)
-  - [Core Functions](#core-functions)
-  - [SHINE](#shine)
-  - [Usage Examples](#usage-examples)
-  - [Security Considerations](#security-considerations)
-- [Authentication](#authentication)
-- [SHINE](#shine-secure-hash-integrity-network-ethereum)
-- [Inspector](#inspector)
-- [Gungra.ph](#gungraph)
+- [Overview](#overview)
+- [Features](#features)
+- [How It Works](#how-it-works)
+- [Important Notice](#important-notice)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
 
-## Important Notice ⚠️
+## Overview
 
-**Attention**: Currently, this Gun.js implementation is not connected to any external relay. As a result, all data saved and managed through Gun will exclusively use your browser's local storage. This means:
+Gungra.ph offers a secure and censorship-resistant space for writers to create, share, and engage with content. Leveraging the power of GUN.js for decentralized data storage and Ethereum for authentication, Gungra.ph provides a truly decentralized blogging platform.
 
-1. Data will not persist across different browser sessions or devices.
-2. Data sharing between users will be limited.
-3. Clearing your browser cache will result in the loss of all saved data.
+## Features
 
-It is recommended to use this configuration for development and testing purposes only. For a complete and functional implementation in a production environment, it is necessary to configure and connect Gun to appropriate relays to ensure data persistence and synchronization.
+- **Decentralized Storage**: Content is stored across a distributed network.
+- **Ethereum Authentication**: Secure login using your Ethereum wallet.
+- **Public and Private Posts**: Choose to share your content publicly or keep it private.
+- **Content Verification**: Optionally verify your content's authenticity on-chain.
+- **User-Friendly Interface**: Intuitive design for easy post creation and management.
 
-## SE2-Gun-Extension
+## How It Works
 
-The SE2-Gun-Extension is a plugin for SE2 that provides a ready to go installation of Gun and the Gun-Eth plugin.
+1. **Connection**: Users connect with their Ethereum wallet.
+2. **Creation**: Writers can create new posts or edit existing ones.
+3. **Publishing**: Posts are published to the decentralized network.
+4. **Sharing**: Users can share links to their posts.
+5. **Interaction**: Readers can access and interact with published content.
 
-[SE2-Gun-Extension](https://github.com/scobru/se2-gun-extension)
+## Important Notice
 
-### How to install
+**Attention**: Currently, this GUN.js implementation is not connected to any external relay. Consequently:
 
-```bash
-npx create-eth@latest -e {scobru/se2-gun-extension}
-```
+- Data is stored only locally in the user's browser.
+- Data does not persist across different browser sessions or devices.
+- Data sharing between users is limited.
+- Clearing your browser cache will result in the loss of all saved data.
 
-## GUN-ETH Plugin
+It is recommended to use this configuration for development and testing purposes only.
 
-The Gun-eth plugin extends Gun.js functionality to integrate seamlessly with Ethereum blockchain capabilities. It provides a suite of tools for working with Ethereum signatures, managing encrypted key pairs, and implementing the SHINE for blockchain data verification.
+## Getting Started
 
-### Key Features
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Start the application with `npm run dev`
+4. Open your browser and go to `http://localhost:5173/gungraph`
 
-- **Ethereum Signature Verification**: Verify Ethereum signatures for messages.
-- **Password Generation**: Generate secure passwords from Ethereum signatures.
-- **Signature Creation**: Create Ethereum signatures for messages.
-- **Encrypted Key Pair Management**: Create, store, and retrieve encrypted key pairs.
-- **SHINE Implementation**: Implement the SHINE for data verification on the blockchain.
+## Usage
 
-### How to install
+- **Create a new post**: Click on "New Post" and fill in the required fields.
+- **Edit a post**: Select an existing post and click "Edit".
+- **Delete a post**: Click "Delete" next to the desired post (private posts only).
+- **Share a post**: Copy the post link after publishing.
 
-```bash
-npm install gun-eth
-```
-
-```bash
-import gun from "gun";
-import "gun-eth";
-
-const gun = gun();
-
-await gun.generatePassword("YOUR_SIGNATURE");
-```
-
-### How to use
-
-Learn more about Gun.js [here](https://gun.eco/docs/Getting-Started).
-
-Learn more about plugin implementation [here](https://github.com/amark/gun/wiki/Adding-Methods-to-the-Gun-Chain#abstraction-layers).
-
-### Core Functions
-
-- `verifySignature(message, signature)`: Verifies an Ethereum signature for a given message.
-
-  ```js
-  const recoveredAddress = await gun.verifySignature(message, signature);
-  ```
-
-- `generatePassword(signature)`: Generates a password from an Ethereum signature.
-
-  ```js
-  const password = gun.generatePassword(signature);
-  ```
-
-- `createSignature(message)`: Creates an Ethereum signature for a message.
-
-  ```js
-  const signature = await gun.createSignature(message);
-  ```
-
-- `createAndStoreEncryptedPair(address, signature)`: Creates and stores an encrypted key pair.
-
-  ```js
-  await gun.createAndStoreEncryptedPair(address, signature);
-  ```
-
-- `getAndDecryptPair(address, signature)`: Retrieves and decrypts a stored key pair.
-
-  ```js
-  const decryptedPair = await gun.getAndDecryptPair(address, signature);
-  ```
-
-- `shine(chain, nodeId, data, callback)`: Implements SHINE for data verification and storage on the blockchain.
-  ```js
-  gun.shine("optimismSepolia", nodeId, data, callback);
-  ```
-
-### SHINE
-
-SHINE (Secure Hash Integrity Network Ethereum) provides a mechanism for verifying data integrity using Ethereum and Gun.js.
-
-1. **Data Storage**: When saving data, a content hash is generated and stored in both Gun.js and on the Ethereum blockchain.
-2. **Data Verification**: To verify data, the stored hash is compared with a hash generated from the data retrieved from Gun.js.
-3. **Blockchain Interaction**: The plugin interacts with an Ethereum smart contract to store and verify data hashes.
-
-### Usage Examples
-
-#### Verifying Data by NodeId
-
-```js
-const nodeId = "your-node-id-here";
-gun.shine("optimismSepolia", nodeId, null, (ack) => {
-  if (ack.ok) {
-    console.log("Data verified on blockchain", ack);
-    console.log("Timestamp:", ack.timestamp);
-    console.log("Updater:", ack.updater);
-    console.log("Latest Record:", ack.latestRecord);
-  } else {
-    console.log("Data not verified or not found", ack);
-  }
-});
-```
-
-#### Storing New Data
-
-```js
-const data = { message: "Hello, blockchain!" };
-gun.shine("optimismSepolia", null, data, (ack) => {
-  if (ack.ok) {
-    console.log("Data stored on Gun.js and blockchain", ack);
-    console.log("New Node ID:", ack.nodeId);
-    console.log("Transaction Hash:", ack.txHash);
-  } else {
-    console.log("Error storing data", ack);
-  }
-});
-```
-
-### Security Considerations
-
-- Use a secure Ethereum provider (e.g., MetaMask) when interacting with functions that require signatures.
-- Generated passwords and key pairs are sensitive. Handle them carefully and avoid exposing them.
-- Keep Gun.js and Ethereum dependencies up to date for security.
-- Be aware of gas costs associated with blockchain interactions when using SHINE.
-
-## Authentication
-
-The authentication process in SHINE combines Ethereum signatures with Gun.js for secure and decentralized user management:
-
-1. **Signature**: The user signs a message with their Ethereum wallet, proving ownership of the address.
-2. **Encrypted Identity**: The signature is used to generate and encrypt a unique identity for the user.
-3. **Gun Registration**: This encrypted identity is then registered and stored in Gun.js, creating a decentralized user account.
-
-This process ensures secure, pseudonymous authentication without relying on centralized servers or exposing sensitive information.
-
-## SHINE (Secure Hash Integrity Network Ethereum)
-
-SHINE provides a mechanism for verifying data integrity using Ethereum and Gun.js:
-
-1. **Data Hashing**: User data is hashed to create a unique fingerprint.
-2. **Blockchain Storage**: The hash is stored on the Ethereum blockchain, creating an immutable record.
-3. **Decentralized Data Storage**: The original data is stored in Gun.js, ensuring decentralized access.
-4. **Verification**: Data integrity can be verified by comparing the stored hash with a newly generated hash of the retrieved data.
-
-This system allows for trustless verification of data integrity, combining the security of blockchain with the flexibility of decentralized storage.
-
-## Inspector
-
-The Inspector component provides a powerful tool for exploring and manipulating Gun.js data:
-
-- **Data Visualization**: View the structure and content of Gun.js data in real-time.
-- **Node Navigation**: Easily navigate through the graph structure of Gun.js data.
-- **Data Manipulation**: Add, edit, or delete nodes directly from the interface.
-- **Search Functionality**: Quickly find specific nodes or data within the Gun.js graph.
-- **Real-time Updates**: See changes to the data reflected immediately in the interface.
-
-The Inspector is an essential tool for developers working with Gun.js, providing insights into data structure and facilitating debugging and data management tasks.
-
-## Gungra.ph
-
-GunGraph demonstrates the power of decentralized social networking using Gun.js:
-
-- **Post Creation**: Users can create and publish posts to the decentralized network.
-- **Data Persistence**: Posts are stored in Gun.js, ensuring data availability across peers.
-- **Real-time Updates**: New posts and changes are reflected in real-time across all connected clients.
-- **User Ownership**: Each user controls their own data and can manage their posts.
-- **Decentralized Architecture**: The system operates without a central server, leveraging peer-to-peer connections.
-
-GunGraph showcases how Gun.js can be used to build decentralized applications with real-time data synchronization, providing a foundation for creating resilient and user-centric social platforms.
+For more detailed usage instructions, refer to the "How to Use Verification" section within the application.
