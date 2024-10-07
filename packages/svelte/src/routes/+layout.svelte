@@ -26,6 +26,16 @@
       localStorage: false,
     }),
   );
+
+  get(gun).on("out", function (msg) {
+    var to = this.to;
+    // Adds headers for put
+    msg.headers = {
+      token: "test",
+    };
+    console.log("msg", msg);
+    to.next(msg); // pass to next middleware
+  });
 </script>
 
 <svelte:head>
