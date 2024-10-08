@@ -7,13 +7,13 @@
   import DOMPurify from "dompurify";
   import { currentUser, gun } from "$lib/stores";
   import { goto } from "$app/navigation";
-  import { get } from "svelte/store";
+  import { get, writable } from "svelte/store";
   import AuthModal from "$lib/components/AuthModal.svelte";
 
   let user;
   const SEA = Gun.SEA;
   let hash = "";
-  let isLoading = true;
+  let isLoading = writable(true);
   let isEditing = false;
   let isPublic = true;
 
@@ -36,7 +36,7 @@
     if (!gunInstance) {
       console.error("Gun instance not initialized");
       errorMessage = "Errore di inizializzazione. Riprova più tardi.";
-      isLoading = false;
+      isLoading.set(false);
       return;
     }
 
@@ -49,23 +49,24 @@
     console.log("UserPair caricato:", userPair);
 
     if (hash) {
-      // Se c'è un hash, prova a caricare il post (pubblico o privato)
       await loadPost(hash);
-      isLoading = false;
     } else if (!userPair || !get(currentUser)) {
-      // Se non c'è un hash e l'utente non è autenticato, mostra un messaggio o reindirizza
       console.log("Utente non autenticato");
       errorMessage = "Please click on VIEW PAIR in the auth page";
       showAuthLink = true;
-      isLoading = false;
     } else {
-      // Se l'utente è autenticato ma non c'è un hash, carica i post dell'utente
       console.log("Utente autenticato, caricamento post...");
       await loadUserPosts();
       isEditing = false;
-      isLoading = false;
     }
+    isLoading.set(false);
   });
+
+  $: {
+    if ($currentUser) {
+      loadUserPosts();
+    }
+  }
 
   async function loadPost(postHash) {
     if (!gun) {
@@ -282,7 +283,7 @@
     verification = "";
     hash = "";
     isEditing = false;
-    isLoading = false;
+    isLoading.set(false);
     errorMessage = "";
     loadUserPosts();
   }
@@ -315,7 +316,7 @@
     </div>
   {/if}
 
-  {#if isLoading}
+  {#if $isLoading}
     <div class="flex items-center justify-center">
       <span class="loading loading-spinner loading-lg"></span>
     </div>
@@ -388,7 +389,7 @@
     </div>
   {/if}
 </main>
-<AuthModal />
+<AuthModal {isLoading} />
 
 <style>
   :global(body) {

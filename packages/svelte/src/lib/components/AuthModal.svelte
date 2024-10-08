@@ -9,6 +9,9 @@
   import type { IGunUserInstance } from "gun/types";
   import Gun from "gun";
   import "gun-eth";
+  import { writable, derived } from "svelte/store";
+
+  let isLoading = writable(false);
 
   let user: IGunUserInstance = {
     recall: (options: { sessionStorage: boolean }, callback: (ack: any) => Promise<void>) => {},
@@ -29,6 +32,10 @@
   $: isOpen = $currentUser === null;
 
   let gunInstance: IGunInstance<any> | null = get(gun);
+
+  onMount(() => {
+    isLoading.set(false);
+  });
 
   Gun.on("opt", function (ctx) {
     if (ctx.once) {
@@ -114,6 +121,7 @@
           errorMessage = "Errore durante la registrazione: " + ack.err;
         } else {
           alert("Registrazione completata! Ora puoi accedere.");
+          isLoading.set(false);
           await loadUserData();
           currentUser.set(user.is.alias);
         }
@@ -128,6 +136,7 @@
 
     if (!account.address) {
       notification.error("Nessun account Ethereum connesso");
+      isLoading.set(false);
       return;
     }
     console.log("Accesso in corso...");
@@ -164,9 +173,11 @@
           currentUser.set(user.is.alias);
           await loadUserData();
         }
+        isLoading.set(false);
       });
     } catch (error) {
       errorMessage = "Errore durante l'accesso: " + error.message;
+      isLoading.set(false);
     }
   }
 
@@ -175,6 +186,7 @@
     currentUser.set(null);
     userPair = null;
     errorMessage = "";
+    sessionStorage.removeItem("pair");
   }
 
   function chiudiModale() {
@@ -185,34 +197,42 @@
 <div class="modal" class:modal-open={isOpen}>
   <div class="modal-box">
     <h3 class="text-lg font-bold">Autenticazione</h3>
-    {#if errorMessage}
-      <div class="alert alert-error mt-4">{errorMessage}</div>
-    {/if}
-    {#if $currentUser === null}
-      <div class="mt-4 flex justify-center space-x-4">
-        <button class="btn btn-primary" on:click={registra}><i class="fas fa-user-plus"></i> Sign In</button>
-        <button class="btn btn-secondary" on:click={accedi}><i class="fas fa-sign-in-alt"></i> Login</button>
+
+    {#if get(isLoading)}
+      <div class="mt-4 flex items-center justify-center">
+        <span class="loading loading-spinner loading-lg"></span>
       </div>
     {:else}
-      <div class="bg-base-100 mb-4 break-all rounded px-8 pb-8 pt-6 text-center shadow-md">
-        <h2 class="mb-4 text-2xl font-semibold">Benvenuto, {$currentUser}!</h2>
+      {#if errorMessage}
+        <div class="alert alert-error mt-4">{errorMessage}</div>
+      {/if}
+      {#if $currentUser === null}
+        <div class="mt-4 flex justify-center space-x-4">
+          <button class="btn btn-primary" on:click={registra}><i class="fas fa-user-plus"></i> Sign In</button>
+          <button class="btn btn-secondary" on:click={accedi}><i class="fas fa-sign-in-alt"></i> Login</button>
+        </div>
+      {:else}
+        <div class="bg-base-100 mb-4 break-all rounded px-8 pb-8 pt-6 text-center shadow-md">
+          <h2 class="mb-4 text-2xl font-semibold">Benvenuto, {$currentUser}!</h2>
 
-        {#if userPair && Object.keys(userPair).length > 0}
-          <div class="my-5 items-center">
-            <ul class="mx-auto w-2/4 text-left">
-              {#each Object.entries(userPair) as [key, value]}
-                <li class="mb-2">
-                  <strong>{key}:</strong> <span class="text-base-content">{JSON.stringify(value, null, 2)}</span>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        {/if}
+          {#if userPair && Object.keys(userPair).length > 0}
+            <div class="my-5 items-center">
+              <ul class="mx-auto w-2/4 text-left">
+                {#each Object.entries(userPair) as [key, value]}
+                  <li class="mb-2">
+                    <strong>{key}:</strong> <span class="text-base-content">{JSON.stringify(value, null, 2)}</span>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
 
-        <button class="btn btn-warning" on:click={esci}><i class="fas fa-sign-out-alt"></i> Esci</button>
-        <button class="btn btn-warning" on:click={accedi}><i class="fas fa-eye"></i> View Pair</button>
-      </div>
+          <button class="btn btn-warning" on:click={esci}><i class="fas fa-sign-out-alt"></i> Esci</button>
+          <button class="btn btn-warning" on:click={accedi}><i class="fas fa-eye"></i> View Pair</button>
+        </div>
+      {/if}
     {/if}
+
     <div class="modal-action">
       <button class="btn" on:click={chiudiModale}>Chiudi</button>
     </div>

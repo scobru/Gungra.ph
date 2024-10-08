@@ -24,8 +24,17 @@
 
   export const menuLinks: HeaderMenuLink[] = [
     {
+      label: "Write",
+      href: "/",
+    },
+
+    {
+      label: "Auth",
+      href: "/auth",
+    },
+    {
       label: "About",
-      href: "/gungraph",
+      href: "/about",
     },
   ];
 

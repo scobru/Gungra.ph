@@ -3,17 +3,18 @@
   import { createNativeCurrencyPrice } from "$lib/runes/nativeCurrencyPrice.svelte";
   import Header from "./Header.svelte";
   import Footer from "./Footer.svelte";
-  import { reconnect } from "@wagmi/core";
+  import { reconnect, getAccount } from "@wagmi/core";
   import { wagmiConfig } from "$lib/wagmi";
   import { untrack } from "svelte";
   import { createDarkMode } from "$lib/runes/darkMode.svelte";
   import { modal } from "$lib/modal";
+  import { derived } from "svelte/store";
 
   const price = createNativeCurrencyPrice();
 
-  $effect(() => {
-    setNativeCurrencyPrice(price.nativeCurrencyPrice);
-  });
+  import { createAccount } from "@byteatatime/wagmi-svelte";
+  const { address, chain, isConnected } = $derived.by(createAccount());
+  const connected = $derived(isConnected);
 
   $effect(() => {
     untrack(() => {
@@ -21,7 +22,15 @@
     });
   });
 
-  const { isDarkMode } = $derived.by(createDarkMode());
+  $effect(() => {
+    if (!connected) {
+      if (sessionStorage.getItem("pair")) {
+        sessionStorage.removeItem("pair");
+      }
+    }
+  });
+
+  const { isDarkMode } = createDarkMode();
 
   $effect(() => {
     modal.setThemeMode(isDarkMode ? "dark" : "light");
